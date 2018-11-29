@@ -487,7 +487,6 @@ function update_order_info($data)
         update_post_meta($orderid, '_billing_last_name', $user->last_name);
         update_post_meta($orderid, '_billing_email', $user->email);
 
-        add_action( 'woocommerce_email_before_order_table', 'add_content_specific_email', 20, 4 );
     }
 }
 
@@ -511,7 +510,7 @@ function insert_registered_member($action, $form_id, $post_id, $form_data)
                 'post_author' => 1
             );
             $new_post_id = wp_insert_post($my_post);
-
+            $registration_date = date("Y-m-d");
             //update_post_meta($new_post_id, 'wpcf-member-user-id', $post_id);
             update_post_meta($new_post_id, 'wpcf-personal-email', $_POST['user_email']);
             update_post_meta($new_post_id, 'wpcf-personal-phone', $_POST['user_phone']);
@@ -520,7 +519,16 @@ function insert_registered_member($action, $form_id, $post_id, $form_data)
             update_post_meta($new_post_id, 'wpcf-member-subscription', $_POST['wpcf-package']);
             update_post_meta($new_post_id, 'wpcf-member-registrationid', $registrationid);
             update_post_meta($new_post_id, 'wpcf-firstname', $_POST['first_name']);
+            update_post_meta($new_post_id, 'wpcf-registration-date', $registration_date);
         }
+    }
+    if ($form_id == 326) {
+        // user is renewing, update package fields and update registration date
+        $registrationid = sha1($_POST['user_email']);
+        $member = getMemberByRegistrationID($registrationid);
+        $registration_date = date("Y-m-d");
+        update_post_meta($member->id(), 'wpcf-member-subscription', $_POST['wpcf-package']);
+        update_post_meta($member->id(), 'wpcf-registration-date', $registration_date);
     }
 }
 function memberProfile_shortcode() {
@@ -531,8 +539,12 @@ function memberProfile_shortcode() {
     $member = getMemberByRegistrationID($registrationid);
     $postid = $member->id();
 
-    echo do_shortcode('[cred_form form=142 post=' . $postid . ']');
-
+    // check if user needs to renew their profile
+    if($member->subscriptionExpired()) {
+        echo do_shortcode('[cred_user_form form=326 user=' . $user->id . ']');
+    } else {
+        echo do_shortcode('[cred_form form=142 post=' . $postid . ']');
+    }
 }
 
 add_shortcode('member_profile', 'memberProfile_shortcode');

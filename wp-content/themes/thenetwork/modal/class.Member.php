@@ -164,6 +164,10 @@ class Member extends NetworkBase
     {
         return $this->getPostMeta('registration-id');
     }
+    public function getRegistrationDate()
+    {
+        return $this->getPostMeta('registration-date');
+    }
     public function isFeatured()
     {
         if($this->getPostMeta('feature-member') == 1) {
@@ -225,6 +229,14 @@ class Member extends NetworkBase
         </ul>';
 
         return $html;
+    }
+    public function subscriptionExpired()
+    {
+        if(strtotime($this->getRegistrationDate()) <= strtotime(('-1 year'))) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
 }
